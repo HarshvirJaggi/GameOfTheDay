@@ -1,10 +1,18 @@
+import os 
+import shutil
+
 import chess 
 import chess.svg as svg
+import chess.pgn 
+
 import requests
 from bs4 import BeautifulSoup
 
 from svglib.svglib import svg2rlg
-from reportlab.graphics import renderPDF
+from reportlab.graphics import renderPDF,renderPM
+from pdf2image import convert_from_path
+
+import imageio
 
 def grabGameOfTheDay():
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) '\
@@ -29,30 +37,57 @@ def grabGameOfTheDay():
     pgn_URL = pgn_URL_template + game_ID
     pgn_page = requests.get(pgn_URL, headers=headers)
 
-    return pgn_page.text
+    pgn_file = open('example.pgn', 'w')
+    pgn_file.write(pgn_page.text)
+    print(pgn_page.text)
+    pgn_file.close()
+
+    return 
 
 def generateGame():
-    #board = chess.Board()
+    pgn = open("example.pgn")
 
-    #board.push_san("e4")
-    #board.push_san("e5")
-    #board.push_san("Qh5")
-    #board.push_san("Nc6")
-    #board.push_san("Bc4")
-    #board.push_san("Nf6")
-    #board.push_san("Qxf7")
+    game = chess.pgn.read_game(pgn)
+    board = game.board()
 
-    #board = svg.board(board,size=650)
+    dir = "images"
+    if os.path.exists(dir):
+        shutil.rmtree(dir)
+    os.makedirs(dir)
+    
+    ply = 0 
+    for move in game.mainline_moves():
+        board.push(move)
+        board_SVG = svg.board(board,size=120000)
+        graphics_file = open('board.svg', 'w')
+        graphics_file.write(board_SVG)
+        graphics_file.close()
+        drawing = svg2rlg('board.svg')
+        renderPDF.drawToFile(drawing, dir +f"/board{ply}.pdf")
+        ply = ply + 1
+    os.remove("board.svg")
 
-    #graphics_file = open('board.svg', 'w')
-    #graphics_file.write(board)
-    #graphics_file.close()
+    return dir,ply
 
-
-    #drawing = svg2rlg('board.svg')
-
-    #renderPDF.drawToFile(drawing, "board.pdf")
+def convertPDFs2GIF(dir,ply):
+    images = []
+    for i in range(ply):
+        page = convert_from_path(dir +f"/board{i}.pdf",1)[0]
+        page.save(dir +f"/board{i}.png","PNG")
+        os.remove(dir +f"/board{i}.pdf")
+        images.append(imageio.imread(dir +f"/board{i}.png"))
+        os.remove(dir +f"/board{i}.png")
+    os.rmdir(dir)
+    imageio.mimsave('game.gif', images, duration = 0.6)
+    
     return
 
 
-print(grabGameOfTheDay())
+grabGameOfTheDay()
+
+directory, ply = generateGame()
+
+print("GENERATING GAME!")
+
+convertPDFs2GIF(directory,ply)
+
