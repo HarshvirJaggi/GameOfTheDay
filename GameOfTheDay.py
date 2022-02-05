@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import os 
 import shutil
 
@@ -37,7 +38,7 @@ def grabGameOfTheDay():
     pgn_URL = pgn_URL_template + game_ID
     pgn_page = requests.get(pgn_URL, headers=headers)
 
-    pgn_file = open('example.pgn', 'w')
+    pgn_file = open('game.pgn', 'w')
     pgn_file.write(pgn_page.text)
     print(pgn_page.text)
     pgn_file.close()
@@ -45,7 +46,7 @@ def grabGameOfTheDay():
     return 
 
 def generateGame():
-    pgn = open("example.pgn")
+    pgn = open("game.pgn")
 
     game = chess.pgn.read_game(pgn)
     board = game.board()
@@ -82,12 +83,13 @@ def convertPDFs2GIF(dir,ply):
     
     return
 
+def main():
+    grabGameOfTheDay()
 
-grabGameOfTheDay()
+    directory, ply = generateGame()
 
-directory, ply = generateGame()
+    convertPDFs2GIF(directory,ply)
 
-print("GENERATING GAME!")
-
-convertPDFs2GIF(directory,ply)
+if __name__ == "__main__":
+        main()
 
