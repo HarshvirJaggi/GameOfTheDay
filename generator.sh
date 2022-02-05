@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source $PWD/chessEnv/bin/activate
+source ~/environments/chessEnv/bin/activate
 
 chmod +x GameOfTheDay.py
 
